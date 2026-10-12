@@ -1,0 +1,15 @@
+### Current task summary
+
+{{task_tldr}}
+
+### Prior agent activity, in chronological order
+
+{{prior_public_activity_json}}
+
+### Current agent activity
+
+{{current_interaction_json}}
+
+### Candidate historical memories
+
+{{candidate_memories_json}}

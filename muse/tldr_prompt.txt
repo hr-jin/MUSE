@@ -1,0 +1,13 @@
+Summarize the following task instruction in one English sentence of at
+most 80 words. Preserve its scientific or computational objective,
+required deliverable, and essential constraints. Describe what is
+requested, without proposing a solution. Base the summary only on
+this instruction.
+
+### Task instruction
+
+{{instruction}}
+
+### Output
+
+One sentence.

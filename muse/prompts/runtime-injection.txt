@@ -1,0 +1,9 @@
+## Review of the current work
+
+{{review_note}}
+
+Check this point against your current work and revise the affected part if needed before finalizing.
+
+## Reminder - Historical experience
+
+{{rendered_historical_experience}}

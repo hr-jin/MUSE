@@ -1,0 +1,76 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_ref",
+    "operations"
+  ],
+  "properties": {
+    "source_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action",
+          "entry_id",
+          "text",
+          "source_refs",
+          "evidence_status",
+          "basis"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "add",
+              "replace",
+              "retire"
+            ]
+          },
+          "entry_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "evidence_status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "observed",
+              "derived_from_contract",
+              "proposed_unverified",
+              null
+            ]
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

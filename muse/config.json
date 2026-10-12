@@ -1,0 +1,47 @@
+{
+  "version": "muse-four-routes-top1-review",
+  "gate_model": "glm-5.3-flash",
+  "gate_effort": "high",
+  "tldr_model": "glm-5.3-flash",
+  "tldr_effort": "high",
+  "coarse_top_k": 1,
+  "max_injected_per_checkpoint": 1,
+  "recent_assistant_turns": 1,
+  "embedding_batch_size": 8,
+  "embedding_timeout_seconds": 45,
+  "gate_timeout_seconds": 300,
+  "tldr_timeout_seconds": 180,
+  "checkpoint_timeout_seconds": 660,
+  "trigger_policy": "Only Write/Bash PostToolUse and PostToolUseFailure; all other tools return before context/retrieval/Gate",
+  "query_policy": "Unchunked current assistant ordinary content; Write content only, no Write result; Bash complete command and textual result",
+  "initial_policy": "Full first user prompt before history insertion on both sides; current test prompt versus cold training first user message; no embedding instruction, no trimming or extra reference concatenation; shared RAG/SM ranking",
+  "dedup_policy": "Exclude initial sources before each Top1; merge by source; exclude previously injected sources before Gate without backfill",
+  "embedding_instruction_prefix": false,
+  "step_decision_cap": null,
+  "evaluation_in_key": false,
+  "evaluation_in_gate_and_payload": true,
+  "gate_failure_policy": "Record as gate_error and raise; never silently label an API failure as abstention",
+  "protocol_revision": "v6-format-v2",
+  "format_max_attempts": 2,
+  "gate_enabled": true,
+  "context_policy": "Retrieval uses current interaction; Gate sees task summary, prior public activity, current interaction and candidates",
+  "route_top_k": 1,
+  "max_merged_candidates": 4,
+  "key_pools": [
+    "L2.decision + L2.choice_and_reason",
+    "L1.submissioned_solution",
+    "official_evaluation.error"
+  ],
+  "route_bank_required": true,
+  "route_top_ks": {
+    "assistant_to_l2": 1,
+    "arguments_to_code": 1,
+    "arguments_to_l2": 1,
+    "result_to_error": 1
+  },
+  "gate_output_fields": [
+    "inject_ids",
+    "review_note"
+  ],
+  "evaluation_in_key_scope": "Historical evaluation is excluded from the L2 implementation key. Historical error text is indexed separately for tool-return retrieval."
+}

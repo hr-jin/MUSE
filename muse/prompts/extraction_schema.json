@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Scientific Memory root-cause and correct-approach extraction",
+  "type": "object",
+  "description": "Only model-generated text; assembly copies scientific_problem and official_evaluation to shared context and final code to L1.submissioned_solution.",
+  "additionalProperties": false,
+  "required": [
+    "final_route",
+    "decisions"
+  ],
+  "properties": {
+    "final_route": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Observed final route, its evidence-grounded mechanism and conditional correct approach or route-selection lesson; distinguish proposed remedies from observed actions."
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Consequential historical decisions and supported conditional lessons.",
+        "additionalProperties": false,
+        "required": [
+          "decision",
+          "choice_and_reason",
+          "failure_relation"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Concrete operation/choice and essential applicability conditions."
+          },
+          "choice_and_reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Actual choice and rationale, root-cause/effect analysis, and supported conditional correct approach; label untested proposals explicitly."
+          },
+          "failure_relation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Evidence-supported relation of this decision to a reported correctness or performance failure; null when no such relation is established. Null is not a correctness or applicability endorsement. Keep correctness and acceleration outcomes separate."
+          }
+        }
+      },
+      "description": "Concise consequential decisions grounded in the trajectory, final submission and feedback, with evidence-based recommendations."
+    }
+  }
+}
