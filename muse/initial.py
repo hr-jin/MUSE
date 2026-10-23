@@ -1,6 +1,5 @@
-"""V8 initial retrieval from complete first-user text.
-Training keys use accepted cold first-user content; test queries use the current
-consumer's complete pre-history user content. Explicit manifest sources are
+"""Initial retrieval from problems with shared environment instructions removed.
+Explicit manifest sources are
 hash-bound, train/test are disjoint, and both sides receive no embedding prefix.
 RAG and SM share source ranking while their original value callbacks stay intact.
 
@@ -21,9 +20,76 @@ See input_manifest_kbx.json / input_manifest_pde.json for hash-bound real source
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import numpy as np
+
+INITIAL_VERSION = "V8-initial-problem-v2"
+INITIAL_POLICY = "problem_without_environment_v2"
+
+_ENVIRONMENT_HEADINGS = {
+    "environment",
+    "execution environment",
+    "environment instructions",
+    "shared environment",
+    "shared environment instructions",
+    "workspace protocol",
+}
+_SUBMISSION_PREFIX = (
+    "## Submission instructions\n"
+    "Read the supplied task materials and write the required implementation files.\n"
+    "Do not run tests. Once the files are complete, save them, submit, and finish.\n"
+)
+
+
+def problem_text(text):
+    lines = text.splitlines(keepends=True)
+    kept = []
+    fence = None
+    skipped_level = None
+    changed = False
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        fence_match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line.rstrip("\r\n"))
+        if fence is not None:
+            if (fence_match and fence_match[1][0] == fence[0]
+                    and len(fence_match[1]) >= len(fence)
+                    and not fence_match[2].strip()):
+                fence = None
+        elif fence_match:
+            fence = fence_match[1]
+        else:
+            heading = re.match(r"^ {0,3}(#{1,6})\s+(.+?)\s*$", line)
+            if heading:
+                level = len(heading[1])
+                title = re.sub(r"\s+#+$", "", heading[2]).strip().casefold()
+                if skipped_level is not None and level <= skipped_level:
+                    skipped_level = None
+                if re.fullmatch(r"dolfinx \d+(?:\.\d+)* guide", title):
+                    changed = True
+                    break
+                if title in _ENVIRONMENT_HEADINGS:
+                    skipped_level = level if skipped_level is None else skipped_level
+                    changed = True
+                if title == "submission instructions":
+                    block = "".join(lines[index:index + 3]).replace("\r\n", "\n")
+                    if block == _SUBMISSION_PREFIX:
+                        changed = True
+                        index += 3
+                        continue
+        if skipped_level is None:
+            kept.append(line)
+        index += 1
+    if not changed:
+        return text
+    while kept and (not kept[-1].strip() or kept[-1].strip() == "---"):
+        kept.pop()
+    result = "".join(kept).strip()
+    if not result:
+        raise ValueError("No problem text remains after removing environment instructions")
+    return result
 
 
 def digest(data):
@@ -187,7 +253,7 @@ def build_initial(
     """Build isolated cards. renderers[arm](test_task, ordered_train_tasks) returns
     the ORIGINAL rendered value string (or a metadata dict with a text string).
     The callbacks own value formatting; this function never edits their text.
-    Embedder.embed receives exact instruction strings and returns (vectors, usage).
+    Embedder.embed receives problem text and returns (vectors, usage).
     """
     spec, texts, sources, manifest_source = read_sources(manifest_path)
     if (
@@ -210,9 +276,9 @@ def build_initial(
         path = Path(path).resolve()
         renderer_hashes[str(path)] = digest(path.read_bytes())
     train, test = sorted(spec["train"]), sorted(spec["test"])
-    # No instruction/prefix/template is added to either side.
-    key_vectors, key_usage = embedder.embed([texts[t] for t in train])
-    query_vectors, query_usage = embedder.embed([texts[t] for t in test])
+    problems = {task: problem_text(text) for task, text in texts.items()}
+    key_vectors, key_usage = embedder.embed([problems[t] for t in train])
+    query_vectors, query_usage = embedder.embed([problems[t] for t in test])
     key_vectors = _normalized(key_vectors, len(train))
     query_vectors = _normalized(query_vectors, len(test))
     if key_vectors.shape[1] != query_vectors.shape[1]:
@@ -228,7 +294,7 @@ def build_initial(
         selection[task] = {
             "source_tasks": selected,
             "ranking": ranking,
-            "query_sha256": sources[task]["text_sha256"],
+            "query_sha256": digest(problems[task].encode("utf-8")),
         }
         initial[task] = {}
         for arm, render in renderers.items():
@@ -243,7 +309,7 @@ def build_initial(
             card.update(
                 source_tasks=selected,
                 sha256=digest(card["text"].encode("utf-8")),
-                selection_policy="Shared complete first-user semantic ranking; no prefix",
+                selection_policy=INITIAL_POLICY,
             )
             initial[task][arm] = card
     # Reject concurrent changes; never publish a mixed-source bank.
@@ -285,14 +351,14 @@ def build_initial(
         "test_vectors.npy",
     ]
     result = {
-        "version": "V8-initial-first-user-prompt-v1",
+        "version": INITIAL_VERSION,
         "benchmark": spec.get("benchmark"),
         "train_n": len(train),
         "test_n": len(test),
         "top_k": top_k,
         "embedding": spec.get("embedding", {}),
         "instruction_prefix_used": False,
-        "retrieval_policy": "first_user_prompt_v8",
+        "retrieval_policy": INITIAL_POLICY,
         "source_manifest": manifest_source,
         "renderer_sources": renderer_hashes,
         "value_policy": "Original value renderer output, unchanged",

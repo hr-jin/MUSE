@@ -11,9 +11,8 @@ from pathlib import Path
 import numpy as np
 from .io import read, put, sha, digest, verify_manifest, PACKAGE_ROOT
 from .key import key_text, VERSION
+from .initial import INITIAL_VERSION, INITIAL_POLICY, problem_text
 
-INITIAL_VERSION = "V8-initial-first-user-prompt-v1"
-INITIAL_POLICY = "first_user_prompt_v8"
 INITIAL_SOURCE_KIND = "first_user_prompt_before_memory"
 INITIAL_FILES = {
     "instructions.json",
@@ -42,16 +41,16 @@ def _initial_manifest(root, split, index, verify_source_files=False):
     m = _manifest(root)
     if m.get("version") != INITIAL_VERSION:
         raise ValueError(
-            "Only independently rebuilt V8 first-user-prompt initial artifacts are allowed"
+            "Initial artifacts must be rebuilt with the current problem retrieval policy"
         )
     if m.get("retrieval_policy") != INITIAL_POLICY:
-        raise ValueError("Initial retrieval must use the first_user_prompt_v8 policy")
+        raise ValueError("Initial retrieval policy mismatch")
     if (
         m.get("instruction_prefix_used") is not False
         or m.get("retrieval_uses_values_or_outcomes") is not False
     ):
         raise ValueError(
-            "Initial retrieval must use the complete pre-memory first user prompt without an embedding prefix"
+            "Initial retrieval must use problem text without an embedding prefix"
         )
     if not INITIAL_FILES <= set(m["files"]):
         raise ValueError("Incomplete V8 initial artifact")
@@ -152,6 +151,8 @@ def _initial_manifest(root, split, index, verify_source_files=False):
             "V8 initial cards/ranking do not cover the full frozen test split"
         )
     for task, arms in cards.items():
+        if selection[task].get("query_sha256") != digest(problem_text(texts[task])):
+            raise ValueError("Initial retrieval query hash mismatch: " + task)
         selected = selection[task]["source_tasks"]
         if (
             len(selected) != m["top_k"]

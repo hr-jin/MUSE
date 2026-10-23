@@ -14,7 +14,7 @@
   "checkpoint_timeout_seconds": 660,
   "trigger_policy": "Only Write/Bash PostToolUse and PostToolUseFailure; all other tools return before context/retrieval/Gate",
   "query_policy": "Unchunked current assistant ordinary content; Write content only, no Write result; Bash complete command and textual result",
-  "initial_policy": "Full first user prompt before history insertion on both sides; current test prompt versus cold training first user message; no embedding instruction, no trimming or extra reference concatenation; shared RAG/SM ranking",
+  "initial_policy": "Problem text with shared environment instructions removed on both sides; no embedding instruction or extra reference concatenation; shared RAG/SM ranking",
   "dedup_policy": "Exclude initial sources before each Top1; merge by source; exclude previously injected sources before Gate without backfill",
   "embedding_instruction_prefix": false,
   "step_decision_cap": null,
